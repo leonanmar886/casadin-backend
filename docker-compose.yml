@@ -10,6 +10,15 @@ services:
       - .:/app
     working_dir: /app
     command: npm run start:dev
+    environment:
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USERNAME=casadin
+      - DB_PASSWORD=casadin
+      - DB_DATABASE=casadin_db
+      - NODE_ENV=development
+    depends_on:
+      - database
     networks:
       - app-network
 
@@ -49,6 +58,8 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
 networks:
   app-network:
