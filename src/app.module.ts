@@ -7,6 +7,8 @@ import { AppService } from "./app.service";
 import { AuthenticationModule } from "./modules/authentication/authentication.module";
 import { User } from "./modules/users/models/user.entity";
 import { UsersModule } from "./modules/users/users.module";
+import { Gift, Godparent, Wedding, WeddingUserRelation } from "./modules/weddings/models";
+import { WeddingsModule } from "./modules/weddings/weddings.module";
 
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { UsersModule } from "./modules/users/users.module";
         username: configService.get("DB_USERNAME", "casadin"),
         password: configService.get("DB_PASSWORD", "casadin"),
         database: configService.get("DB_DATABASE", "casadin_db"),
-        entities: [User],
+        entities: [User, Wedding, Godparent, Gift, WeddingUserRelation],
         synchronize: configService.get("NODE_ENV") !== "production",
         ssl:
           configService.get("NODE_ENV") === "production"
@@ -35,6 +37,7 @@ import { UsersModule } from "./modules/users/users.module";
     }),
     UsersModule,
     AuthenticationModule,
+    WeddingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,4 +1,7 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+// DEPRECATED: Este guard foi removido porque o papel do usuário agora é relativo a cada casamento
+// Use WeddingPermissionsGuard em src/modules/weddings/guards/wedding-permissions.guard.ts
+
+import { CanActivate, ExecutionContext, Injectable, SetMetadata } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Request } from "express";
 
@@ -6,28 +9,20 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
 }
 
 interface RequestWithUser extends Request {
   user: User;
 }
 
+export const Roles = (...roles: string[]) => SetMetadata("roles", roles);
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>("roles", [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (!requiredRoles) {
-      return true;
-    }
-
-    const request = context.switchToHttp().getRequest<RequestWithUser>();
-    return requiredRoles.includes(request.user.role);
+    // Este guard não é mais usado - o papel é verificado por casamento
+    return true;
   }
 }
