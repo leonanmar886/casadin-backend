@@ -8,7 +8,6 @@ interface User {
   name: string;
   email: string;
   password: string;
-  role: string;
 }
 
 @Injectable()
@@ -50,7 +49,7 @@ export class AuthenticationService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id };
     const token = this.jwtService.sign(payload);
 
     this.logger.debug(
@@ -63,7 +62,6 @@ export class AuthenticationService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
       },
     };
   }
@@ -82,7 +80,7 @@ export class AuthenticationService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
 
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id };
     const token = this.jwtService.sign(payload);
 
     this.logger.debug(
@@ -95,7 +93,6 @@ export class AuthenticationService {
         id: userWithoutPassword.id,
         name: userWithoutPassword.name,
         email: userWithoutPassword.email,
-        role: userWithoutPassword.role,
       },
     };
   }
