@@ -1,14 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import * as bcrypt from "bcrypt";
 import { Repository } from "typeorm";
 import { User } from "./models/user.entity";
-import * as bcrypt from "bcrypt";
 
 export interface CreateUserDto {
   name: string;
   email: string;
   password: string;
-  role: "fiance" | "guest";
 }
 
 @Injectable()
