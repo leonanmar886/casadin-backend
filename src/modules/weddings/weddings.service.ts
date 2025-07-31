@@ -22,7 +22,7 @@ export class WeddingsService {
     private giftsRepository: Repository<Gift>,
     @InjectRepository(WeddingUserRelation)
     private userRelationsRepository: Repository<WeddingUserRelation>,
-  ) {}
+  ) { }
 
   private generateInvitationCode(): string {
     return randomBytes(8).toString("hex").toUpperCase();
@@ -31,8 +31,11 @@ export class WeddingsService {
   async create(createWeddingDto: CreateWeddingDto, userId: number): Promise<Wedding> {
     const invitationCode = this.generateInvitationCode();
 
+    // Remove godparents e gifts do objeto para não duplicar via cascade
+    const { godparents, gifts, ...weddingData } = createWeddingDto;
+
     const wedding = this.weddingsRepository.create({
-      ...createWeddingDto,
+      ...weddingData,
       weddingDate: new Date(createWeddingDto.weddingDate),
       invitationCode,
     });
@@ -50,32 +53,29 @@ export class WeddingsService {
     await this.userRelationsRepository.save(userRelation);
 
     // Criar padrinhos
-    if (createWeddingDto.godparents.length > 0) {
-      const godparents = createWeddingDto.godparents.map((godparentDto) =>
+    if (godparents && godparents.length > 0) {
+      const godparentEntities = godparents.map((godparentDto) =>
         this.godparentsRepository.create({
           ...godparentDto,
           weddingId: savedWedding.id,
         }),
       );
-      await this.godparentsRepository.save(godparents);
+      await this.godparentsRepository.save(godparentEntities);
     }
 
     // Criar presentes
-    if (createWeddingDto.gifts.length > 0) {
-      const gifts = createWeddingDto.gifts.map((giftDto) => {
+    if (gifts && gifts.length > 0) {
+      const giftEntities = gifts.map((giftDto) => {
         const gift = this.giftsRepository.create({
           ...giftDto,
           weddingId: savedWedding.id,
         });
-        
-        // Calcular valor restante
         if (gift.price) {
           gift.amountRemaining = gift.price;
         }
-        
         return gift;
       });
-      await this.giftsRepository.save(gifts);
+      await this.giftsRepository.save(giftEntities);
     }
 
     return this.findOne(savedWedding.id);
@@ -149,7 +149,7 @@ export class WeddingsService {
   async remove(id: number, userId: number): Promise<void> {
     // Verificar se o usuário é noivo deste casamento
     await this.checkUserPermission(id, userId, [WeddingUserRole.FIANCE]);
-    
+
     await this.weddingsRepository.update(id, { isActive: false });
   }
 
@@ -183,11 +183,11 @@ export class WeddingsService {
     await this.checkUserPermission(weddingId, userId, [WeddingUserRole.FIANCE]);
 
     const userRelation = await this.userRelationsRepository.findOne({
-      where: { 
-        weddingId, 
-        userId: acceptGuestDto.userId, 
+      where: {
+        weddingId,
+        userId: acceptGuestDto.userId,
         role: WeddingUserRole.GUEST,
-        isActive: true 
+        isActive: true
       },
     });
 

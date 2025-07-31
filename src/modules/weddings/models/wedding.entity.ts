@@ -35,13 +35,11 @@ export class Wedding {
   description: string;
 
   @ApiProperty({ description: "Lista de padrinhos", type: [Godparent] })
-  @OneToMany(() => Godparent, (godparent) => godparent.wedding, {
-    cascade: true,
-  })
+  @OneToMany(() => Godparent, (godparent) => godparent.wedding)
   godparents: Godparent[];
 
   @ApiProperty({ description: "Lista de presentes", type: [Gift] })
-  @OneToMany(() => Gift, (gift) => gift.wedding, { cascade: true })
+  @OneToMany(() => Gift, (gift) => gift.wedding)
   gifts: Gift[];
 
   @ApiProperty({ description: "URL da foto do rodapé", required: false })
