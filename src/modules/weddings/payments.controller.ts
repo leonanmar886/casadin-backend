@@ -139,9 +139,12 @@ export class PaymentsController {
 
         if (gift) {
           console.log(`Updating gift ${giftId} with payment ${paymentId}`);
-          const paymentAmountInReais = payment.transaction_amount / 100; // Converter centavos para reais
-          gift.amountPaid += paymentAmountInReais;
-          gift.amountRemaining = Math.max(0, gift.price - gift.amountPaid);
+          const paymentAmountInReais = Number(payment.transaction_amount);
+          const newAmountPaid = Number(gift.amountPaid) + paymentAmountInReais;
+          const newAmountRemaining = Math.max(0, Number(gift.price) - newAmountPaid);
+          
+          gift.amountPaid = newAmountPaid;
+          gift.amountRemaining = newAmountRemaining;
 
           if (gift.amountRemaining <= 0) {
             gift.isFullyPaid = true;
@@ -155,8 +158,6 @@ export class PaymentsController {
 
           await this.giftsRepository.save(gift);
           console.log(`Gift ${giftId} updated successfully`);
-        } else {
-          console.warn(`Gift ${giftId} not found for payment ${paymentId}`);
         }
       } else {
         console.warn(`Invalid external reference for payment ${paymentId}: ${externalRef}`);

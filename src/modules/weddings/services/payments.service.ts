@@ -30,10 +30,8 @@ export class PaymentsService {
     if (dto.amount > gift.amountRemaining)
       throw new BadRequestException("Valor excede o restante do presente");
 
-    console.log(`Creating payment for gift ${dto.giftId}, amount: ${dto.amount}, method: ${dto.method}`);
-
     const paymentData: Record<string, any> = {
-      transaction_amount: Math.round(dto.amount * 100), // Converter reais para centavos
+      transaction_amount: dto.amount, // Enviar em reais, não centavos
       description: `Contribuição para presente: ${gift.name}`,
       payment_method_id: dto.method,
       payer: { email: dto.payerEmail },
@@ -50,16 +48,22 @@ export class PaymentsService {
       body: paymentData,
     })) as unknown as MercadoPagoPaymentResponse;
 
-    console.log(`Payment created with ID: ${result.id}, status: ${result.status}`);
+    console.log(
+      `Payment created with ID: ${result.id}, status: ${result.status}`,
+    );
 
     if (
-      String(result.status) === "201" &&
-      (result.status === "approved" ||
-        (dto.method === "pix" && result.status === "pending"))
+      result.status === "approved" ||
+      (dto.method === "pix" && result.status === "pending")
     ) {
-      const paymentAmountInReais = result.transaction_amount / 100; // Converter centavos para reais
-      gift.amountPaid += paymentAmountInReais;
-      gift.amountRemaining -= paymentAmountInReais;
+      const paymentAmountInReais = Number(result.transaction_amount);
+      const newAmountPaid = Number(gift.amountPaid) + paymentAmountInReais;
+      const newAmountRemaining =
+        Number(gift.amountRemaining) - paymentAmountInReais;
+
+      gift.amountPaid = newAmountPaid;
+      gift.amountRemaining = newAmountRemaining;
+
       if (gift.amountRemaining <= 0) {
         gift.isFullyPaid = true;
         gift.paymentStatus = "completed";
