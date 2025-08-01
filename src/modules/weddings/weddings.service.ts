@@ -10,6 +10,7 @@ import { AcceptGuestDto } from "./dto/accept-guest.dto";
 import { CreateWeddingDto } from "./dto/create-wedding.dto";
 import { JoinWeddingDto } from "./dto/join-wedding.dto";
 import { UpdateGiftPaymentDto } from "./dto/update-gift-payment.dto";
+import { UpdateWeddingDto } from "./dto/update-wedding.dto";
 import { Gift } from "./models/gift.entity";
 import { Godparent } from "./models/godparent.entity";
 import {
@@ -143,19 +144,67 @@ export class WeddingsService {
 
   async update(
     id: number,
-    updateWeddingDto: Partial<CreateWeddingDto>,
+    updateWeddingDto: UpdateWeddingDto,
     userId: number,
   ): Promise<Wedding> {
+    console.log("🔧 Atualizando casamento:", { id, userId, updateWeddingDto });
+
     await this.checkUserPermission(id, userId, [WeddingUserRole.FIANCE]);
 
     const updateData = { ...updateWeddingDto };
-    delete updateData.godparents;
-    delete updateData.gifts;
+    const { godparents, gifts, ...weddingData } = updateData;
 
-    await this.weddingsRepository.update(id, {
-      ...updateData,
-      updatedAt: new Date(),
-    });
+        // Atualizar dados básicos do casamento
+    if (Object.keys(weddingData).length > 0) {
+      console.log("📝 Atualizando dados básicos:", weddingData);
+      await this.weddingsRepository.update(id, {
+        ...weddingData,
+        updatedAt: new Date(),
+      });
+    }
+
+    // Atualizar padrinhos se fornecidos
+    if (godparents) {
+      console.log("👥 Atualizando padrinhos:", godparents);
+      // Remover padrinhos existentes
+      await this.godparentsRepository.delete({ weddingId: id });
+
+      // Criar novos padrinhos
+      if (godparents.length > 0) {
+        const newGodparents = godparents.map((godparentDto) =>
+          this.godparentsRepository.create({
+            ...godparentDto,
+            weddingId: id,
+          }),
+        );
+        await this.godparentsRepository.save(newGodparents);
+      }
+    }
+
+        // Atualizar presentes se fornecidos
+    if (gifts) {
+      console.log("🎁 Atualizando presentes:", gifts);
+      // Remover presentes existentes
+      await this.giftsRepository.delete({ weddingId: id });
+
+      // Criar novos presentes
+      if (gifts.length > 0) {
+        const newGifts = gifts.map((giftDto) => {
+          const gift = this.giftsRepository.create({
+            ...giftDto,
+            weddingId: id,
+          });
+
+          // Calcular valor restante
+          if (gift.price) {
+            gift.amountRemaining = gift.price;
+          }
+
+          return gift;
+        });
+        await this.giftsRepository.save(newGifts);
+      }
+    }
 
     return this.findOne(id);
   }
