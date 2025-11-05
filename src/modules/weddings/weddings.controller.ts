@@ -1,29 +1,29 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    FileTypeValidator,
-    Get,
-    MaxFileSizeValidator,
-    Param,
-    ParseFilePipe,
-    Patch,
-    Post,
-    Request,
-    UploadedFile,
-    UploadedFiles,
-    UseGuards,
-    UseInterceptors
+  Body,
+  Controller,
+  Delete,
+  FileTypeValidator,
+  Get,
+  MaxFileSizeValidator,
+  Param,
+  ParseFilePipe,
+  Patch,
+  Post,
+  Request,
+  UploadedFile,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import {
-    ApiBearerAuth,
-    ApiBody,
-    ApiConsumes,
-    ApiOperation,
-    ApiParam,
-    ApiResponse,
-    ApiTags,
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../authentication/guards/jwt-auth.guard";
 import { AcceptGuestDto } from "./dto/accept-guest.dto";
@@ -99,7 +99,11 @@ export class WeddingsController {
     status: 401,
     description: "Não autorizado",
   })
-  acceptGuest(@Param("id") id: string, @Body() acceptGuestDto: AcceptGuestDto, @Request() req) {
+  acceptGuest(
+    @Param("id") id: string,
+    @Body() acceptGuestDto: AcceptGuestDto,
+    @Request() req,
+  ) {
     return this.weddingsService.acceptGuest(+id, acceptGuestDto, req.user.id);
   }
 
@@ -133,7 +137,10 @@ export class WeddingsController {
         urls: {
           type: "array",
           items: { type: "string" },
-          example: ["https://example.com/photo1.jpg", "https://example.com/photo2.jpg"],
+          example: [
+            "https://example.com/photo1.jpg",
+            "https://example.com/photo2.jpg",
+          ],
         },
       },
     },
@@ -367,7 +374,11 @@ export class WeddingsController {
     status: 401,
     description: "Não autorizado",
   })
-  update(@Param("id") id: string, @Body() updateWeddingDto: UpdateWeddingDto, @Request() req) {
+  update(
+    @Param("id") id: string,
+    @Body() updateWeddingDto: UpdateWeddingDto,
+    @Request() req,
+  ) {
     return this.weddingsService.update(+id, updateWeddingDto, req.user.id);
   }
 
@@ -414,8 +425,16 @@ export class WeddingsController {
     status: 401,
     description: "Não autorizado",
   })
-  updateGiftPayment(@Param("id") id: string, @Body() updatePaymentDto: UpdateGiftPaymentDto, @Request() req) {
-    return this.weddingsService.updateGiftPayment(+id, updatePaymentDto, req.user.id);
+  updateGiftPayment(
+    @Param("id") id: string,
+    @Body() updatePaymentDto: UpdateGiftPaymentDto,
+    @Request() req,
+  ) {
+    return this.weddingsService.updateGiftPayment(
+      +id,
+      updatePaymentDto,
+      req.user.id,
+    );
   }
 
   @Get("gifts/:id/payment-stats")
@@ -432,7 +451,7 @@ export class WeddingsController {
         id: { type: "number", example: 1 },
         name: { type: "string", example: "Jogo de Panelas" },
         price: { type: "number", example: 299.99 },
-        amountPaid: { type: "number", example: 150.00 },
+        amountPaid: { type: "number", example: 150.0 },
         amountRemaining: { type: "number", example: 149.99 },
         isFullyPaid: { type: "boolean", example: false },
         progressPercentage: { type: "number", example: 50.0 },

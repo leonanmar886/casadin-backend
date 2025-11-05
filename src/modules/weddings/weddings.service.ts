@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { randomBytes } from "crypto";
 import { Repository } from "typeorm";
@@ -6,9 +10,13 @@ import { AcceptGuestDto } from "./dto/accept-guest.dto";
 import { CreateWeddingDto } from "./dto/create-wedding.dto";
 import { JoinWeddingDto } from "./dto/join-wedding.dto";
 import { UpdateGiftPaymentDto } from "./dto/update-gift-payment.dto";
+import { UpdateWeddingDto } from "./dto/update-wedding.dto";
 import { Gift } from "./models/gift.entity";
 import { Godparent } from "./models/godparent.entity";
-import { WeddingUserRelation, WeddingUserRole } from "./models/wedding-user-relation.entity";
+import {
+  WeddingUserRelation,
+  WeddingUserRole,
+} from "./models/wedding-user-relation.entity";
 import { Wedding } from "./models/wedding.entity";
 
 @Injectable()
@@ -28,7 +36,10 @@ export class WeddingsService {
     return randomBytes(8).toString("hex").toUpperCase();
   }
 
-  async create(createWeddingDto: CreateWeddingDto, userId: number): Promise<Wedding> {
+  async create(
+    createWeddingDto: CreateWeddingDto,
+    userId: number,
+  ): Promise<Wedding> {
     const invitationCode = this.generateInvitationCode();
 
     // Remove godparents e gifts do objeto para não duplicar via cascade
@@ -70,9 +81,12 @@ export class WeddingsService {
           ...giftDto,
           weddingId: savedWedding.id,
         });
+
+        // Calcular valor restante
         if (gift.price) {
           gift.amountRemaining = gift.price;
         }
+
         return gift;
       });
       await this.giftsRepository.save(giftEntities);
@@ -119,43 +133,100 @@ export class WeddingsService {
   async findMyWeddings(userId: number): Promise<Wedding[]> {
     const userRelations = await this.userRelationsRepository.find({
       where: { userId, isActive: true },
-      relations: ["wedding", "wedding.userRelations", "wedding.userRelations.user", "wedding.godparents", "wedding.gifts"],
+      relations: [
+        "wedding",
+        "wedding.userRelations",
+        "wedding.userRelations.user",
+        "wedding.godparents",
+        "wedding.gifts",
+      ],
     });
 
-    return userRelations.map(relation => relation.wedding);
+    return userRelations.map((relation) => relation.wedding);
   }
 
   async update(
     id: number,
-    updateWeddingDto: Partial<CreateWeddingDto>,
+    updateWeddingDto: UpdateWeddingDto,
     userId: number,
   ): Promise<Wedding> {
-    // Verificar se o usuário é noivo deste casamento
+    console.log("🔧 Atualizando casamento:", { id, userId, updateWeddingDto });
+
     await this.checkUserPermission(id, userId, [WeddingUserRole.FIANCE]);
 
-    const updateData: any = { ...updateWeddingDto };
-    if (updateWeddingDto.weddingDate) {
-      updateData.weddingDate = new Date(updateWeddingDto.weddingDate);
+    const updateData = { ...updateWeddingDto };
+    const { godparents, gifts, ...weddingData } = updateData;
+
+        // Atualizar dados básicos do casamento
+    if (Object.keys(weddingData).length > 0) {
+      console.log("📝 Atualizando dados básicos:", weddingData);
+      await this.weddingsRepository.update(id, {
+        ...weddingData,
+        updatedAt: new Date(),
+      });
     }
 
-    await this.weddingsRepository.update(id, {
-      ...updateData,
-      updatedAt: new Date(),
-    });
+    // Atualizar padrinhos se fornecidos
+    if (godparents) {
+      console.log("👥 Atualizando padrinhos:", godparents);
+      // Remover padrinhos existentes
+      await this.godparentsRepository.delete({ weddingId: id });
+
+      // Criar novos padrinhos
+      if (godparents.length > 0) {
+        const newGodparents = godparents.map((godparentDto) =>
+          this.godparentsRepository.create({
+            ...godparentDto,
+            weddingId: id,
+          }),
+        );
+        await this.godparentsRepository.save(newGodparents);
+      }
+    }
+
+        // Atualizar presentes se fornecidos
+    if (gifts) {
+      console.log("🎁 Atualizando presentes:", gifts);
+      // Remover presentes existentes
+      await this.giftsRepository.delete({ weddingId: id });
+
+      // Criar novos presentes
+      if (gifts.length > 0) {
+        const newGifts = gifts.map((giftDto) => {
+          const gift = this.giftsRepository.create({
+            ...giftDto,
+            weddingId: id,
+          });
+
+          // Calcular valor restante
+          if (gift.price) {
+            gift.amountRemaining = gift.price;
+          }
+
+          return gift;
+        });
+        await this.giftsRepository.save(newGifts);
+      }
+    }
 
     return this.findOne(id);
   }
 
   async remove(id: number, userId: number): Promise<void> {
-    // Verificar se o usuário é noivo deste casamento
     await this.checkUserPermission(id, userId, [WeddingUserRole.FIANCE]);
+
 
     await this.weddingsRepository.update(id, { isActive: false });
   }
 
   // Método para usuários se juntarem a um casamento
-  async joinWedding(joinWeddingDto: JoinWeddingDto, userId: number): Promise<WeddingUserRelation> {
-    const wedding = await this.findByInvitationCode(joinWeddingDto.invitationCode);
+  async joinWedding(
+    joinWeddingDto: JoinWeddingDto,
+    userId: number,
+  ): Promise<WeddingUserRelation> {
+    const wedding = await this.findByInvitationCode(
+      joinWeddingDto.invitationCode,
+    );
 
     // Verificar se o usuário já tem relação com este casamento
     const existingRelation = await this.userRelationsRepository.findOne({
@@ -178,7 +249,11 @@ export class WeddingsService {
   }
 
   // Método para noivos aceitarem convidados
-  async acceptGuest(weddingId: number, acceptGuestDto: AcceptGuestDto, userId: number): Promise<WeddingUserRelation> {
+  async acceptGuest(
+    weddingId: number,
+    acceptGuestDto: AcceptGuestDto,
+    userId: number,
+  ): Promise<WeddingUserRelation> {
     // Verificar se o usuário é noivo deste casamento
     await this.checkUserPermission(weddingId, userId, [WeddingUserRole.FIANCE]);
 
@@ -206,7 +281,9 @@ export class WeddingsService {
       updatedAt: new Date(),
     });
 
-    const updatedRelation = await this.userRelationsRepository.findOne({ where: { id: userRelation.id } });
+    const updatedRelation = await this.userRelationsRepository.findOne({
+      where: { id: userRelation.id },
+    });
     if (!updatedRelation) {
       throw new NotFoundException("Relação não encontrada após atualização");
     }
@@ -214,7 +291,11 @@ export class WeddingsService {
   }
 
   // Método para verificar permissões do usuário
-  async checkUserPermission(weddingId: number, userId: number, requiredRoles: WeddingUserRole[]): Promise<void> {
+  async checkUserPermission(
+    weddingId: number,
+    userId: number,
+    requiredRoles: WeddingUserRole[],
+  ): Promise<void> {
     const userRelation = await this.userRelationsRepository.findOne({
       where: { weddingId, userId, isActive: true },
     });
@@ -224,16 +305,27 @@ export class WeddingsService {
     }
 
     if (!requiredRoles.includes(userRelation.role)) {
-      throw new ForbiddenException("Você não tem permissão para realizar esta ação");
+      throw new ForbiddenException(
+        "Você não tem permissão para realizar esta ação",
+      );
     }
 
-    if (userRelation.role === WeddingUserRole.GUEST && !userRelation.isAccepted) {
-      throw new ForbiddenException("Seu convite ainda não foi aceito pelos noivos");
+    if (
+      userRelation.role === WeddingUserRole.GUEST &&
+      !userRelation.isAccepted
+    ) {
+      throw new ForbiddenException(
+        "Seu convite ainda não foi aceito pelos noivos",
+      );
     }
   }
 
   // Método para atualizar pagamento de um presente
-  async updateGiftPayment(giftId: number, updatePaymentDto: UpdateGiftPaymentDto, userId: number): Promise<Gift> {
+  async updateGiftPayment(
+    giftId: number,
+    updatePaymentDto: UpdateGiftPaymentDto,
+    userId: number,
+  ): Promise<Gift> {
     const gift = await this.giftsRepository.findOne({
       where: { id: giftId, isActive: true },
       relations: ["wedding"],
@@ -244,14 +336,19 @@ export class WeddingsService {
     }
 
     // Verificar se o usuário tem acesso ao casamento
-    await this.checkUserPermission(gift.weddingId, userId, [WeddingUserRole.FIANCE, WeddingUserRole.GUEST]);
+    await this.checkUserPermission(gift.weddingId, userId, [
+      WeddingUserRole.FIANCE,
+      WeddingUserRole.GUEST,
+    ]);
 
     if (gift.isFullyPaid) {
       throw new Error("Este presente já foi totalmente pago");
     }
 
     if (gift.price && updatePaymentDto.amount > gift.amountRemaining) {
-      throw new Error("Valor da contribuição excede o valor restante do presente");
+      throw new Error(
+        "Valor da contribuição excede o valor restante do presente",
+      );
     }
 
     // Atualizar valores do presente
@@ -259,7 +356,7 @@ export class WeddingsService {
     const newAmountRemaining = gift.price ? gift.price - newAmountPaid : 0;
     const isFullyPaid = gift.price ? newAmountPaid >= gift.price : false;
 
-    const updateData: any = {
+    const updateData: Partial<Gift> = {
       amountPaid: newAmountPaid,
       amountRemaining: newAmountRemaining,
       isFullyPaid,
@@ -279,9 +376,13 @@ export class WeddingsService {
 
     await this.giftsRepository.update(giftId, updateData);
 
-    const updatedGift = await this.giftsRepository.findOne({ where: { id: giftId } });
+    const updatedGift = await this.giftsRepository.findOne({
+      where: { id: giftId },
+    });
     if (!updatedGift) {
-      throw new NotFoundException(`Presente com ID ${giftId} não encontrado após atualização`);
+      throw new NotFoundException(
+        `Presente com ID ${giftId} não encontrado após atualização`,
+      );
     }
     return updatedGift;
   }
@@ -298,9 +399,14 @@ export class WeddingsService {
     }
 
     // Verificar se o usuário tem acesso ao casamento
-    await this.checkUserPermission(gift.weddingId, userId, [WeddingUserRole.FIANCE, WeddingUserRole.GUEST]);
+    await this.checkUserPermission(gift.weddingId, userId, [
+      WeddingUserRole.FIANCE,
+      WeddingUserRole.GUEST,
+    ]);
 
-    const progressPercentage = gift.price ? (gift.amountPaid / gift.price) * 100 : 0;
+    const progressPercentage = gift.price
+      ? (gift.amountPaid / gift.price) * 100
+      : 0;
 
     return {
       id: gift.id,
