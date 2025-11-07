@@ -1,6 +1,9 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggerModule } from './common/logger/logger.module';
+import { CrudLoggerInterceptor } from './common/interceptors/crud-logger.interceptor';
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
@@ -25,12 +28,12 @@ import { WeddingsModule } from "./modules/weddings/weddings.module";
         password: configService.get("DB_PASSWORD", "casadin"),
         database: configService.get("DB_DATABASE", "casadin_db"),
         entities: [User, Wedding, Godparent, Gift, WeddingUserRelation],
-        synchronize: configService.get("NODE_ENV") !== "production",
+        synchronize: configService.get("NODE_ENV") === "production",
         ssl:
           configService.get("NODE_ENV") === "production"
             ? {
-                rejectUnauthorized: false,
-              }
+              rejectUnauthorized: false,
+            }
             : false,
       }),
       inject: [ConfigService],
@@ -38,8 +41,15 @@ import { WeddingsModule } from "./modules/weddings/weddings.module";
     UsersModule,
     AuthenticationModule,
     WeddingsModule,
+    LoggerModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CrudLoggerInterceptor,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }
