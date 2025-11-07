@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { DynamoLoggerService } from '../logger/dynamo-logger.service';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class CrudLoggerInterceptor implements NestInterceptor {
         const userId = req?.user?.id ?? req?.user?.sub ?? undefined;
 
         const baseLog = {
-            logId: uuidv4(),
+            logId: randomUUID(),
             timestamp: now,
             action,
             method,
