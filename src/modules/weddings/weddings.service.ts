@@ -150,7 +150,6 @@ export class WeddingsService {
     updateWeddingDto: UpdateWeddingDto,
     userId: number,
   ): Promise<Wedding> {
-    console.log("🔧 Atualizando casamento:", { id, userId, updateWeddingDto });
 
     await this.checkUserPermission(id, userId, [WeddingUserRole.FIANCE]);
 
@@ -159,7 +158,6 @@ export class WeddingsService {
 
         // Atualizar dados básicos do casamento
     if (Object.keys(weddingData).length > 0) {
-      console.log("📝 Atualizando dados básicos:", weddingData);
       await this.weddingsRepository.update(id, {
         ...weddingData,
         updatedAt: new Date(),
@@ -168,7 +166,6 @@ export class WeddingsService {
 
     // Atualizar padrinhos se fornecidos
     if (godparents) {
-      console.log("👥 Atualizando padrinhos:", godparents);
       // Remover padrinhos existentes
       await this.godparentsRepository.delete({ weddingId: id });
 
@@ -186,7 +183,6 @@ export class WeddingsService {
 
         // Atualizar presentes se fornecidos
     if (gifts) {
-      console.log("🎁 Atualizando presentes:", gifts);
       // Remover presentes existentes
       await this.giftsRepository.delete({ weddingId: id });
 

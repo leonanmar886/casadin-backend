@@ -27,6 +27,8 @@ export class LoggingInterceptor implements NestInterceptor {
               actionType = 'READ';
               break;
             case 'PUT':
+              actionType = 'UPDATE';
+              break;
             case 'PATCH':
               actionType = 'UPDATE';
               break;
