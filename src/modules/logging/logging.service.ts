@@ -54,6 +54,9 @@ export class LoggingService {
   const id = typeof randomUUID === 'function' ? randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
 
     const item = {
+      // Ensure we include the table's primary key. Some deployments expect `logId` as the
+      // partition key — include it to satisfy that schema. We also keep `id` for traceability.
+      logId: id,
       actionType,
       timestamp,
       id,
