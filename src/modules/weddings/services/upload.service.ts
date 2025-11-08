@@ -5,7 +5,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UploadService {
@@ -27,7 +27,7 @@ export class UploadService {
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
     try {
-      const fileId = uuidv4();
+      const fileId = typeof randomUUID === 'function' ? randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
       const fileExtension = this.getFileExtension(file.originalname);
       const key = `${this.folder}/${fileId}${fileExtension}`;
 
