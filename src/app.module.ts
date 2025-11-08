@@ -9,6 +9,9 @@ import { User } from "./modules/users/models/user.entity";
 import { UsersModule } from "./modules/users/users.module";
 import { Gift, Godparent, Wedding, WeddingUserRelation } from "./modules/weddings/models";
 import { WeddingsModule } from "./modules/weddings/weddings.module";
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingModule } from './modules/logging/logging.module';
+import { LoggingInterceptor } from './modules/logging/logging.interceptor';
 
 @Module({
   imports: [
@@ -38,8 +41,15 @@ import { WeddingsModule } from "./modules/weddings/weddings.module";
     UsersModule,
     AuthenticationModule,
     WeddingsModule,
+    LoggingModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
 })
 export class AppModule {}
