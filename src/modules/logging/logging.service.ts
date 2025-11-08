@@ -19,7 +19,13 @@ export class LoggingService {
       endpoint: process.env.DYNAMODB_ENDPOINT || undefined,
     });
 
-    this.docClient = DynamoDBDocumentClient.from(client);
+    // Configure the DocumentClient to remove undefined values when marshalling
+    // to avoid errors like: "Pass options.removeUndefinedValues=true to remove undefined values"
+    this.docClient = DynamoDBDocumentClient.from(client, {
+      marshallOptions: {
+        removeUndefinedValues: true,
+      },
+    });
   }
 
   /**
