@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class LoggingService {
@@ -30,7 +30,8 @@ export class LoggingService {
    */
   async log(actionType: string, data: any, meta?: Record<string, any>) {
     const timestamp = new Date().toISOString();
-    const id = uuidv4();
+  // use Node's built-in crypto.randomUUID() to avoid ESM/CommonJS import issues
+  const id = typeof randomUUID === 'function' ? randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
 
     const item = {
       actionType,
