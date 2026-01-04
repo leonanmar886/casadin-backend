@@ -156,7 +156,10 @@ export class WeddingsController {
     )
     files: Express.Multer.File[],
   ) {
-    const urls = await this.uploadService.uploadMultipleImages(files);
+    const urls = await this.uploadService.uploadMultipleImages(
+      files,
+      "weddings/couple-photos",
+    );
     return { urls };
   }
 
@@ -199,7 +202,7 @@ export class WeddingsController {
     )
     file: Express.Multer.File,
   ) {
-    const url = await this.uploadService.uploadImage(file);
+    const url = await this.uploadService.uploadImage(file, "weddings/footer");
     return { url };
   }
 
@@ -242,7 +245,10 @@ export class WeddingsController {
     )
     file: Express.Multer.File,
   ) {
-    const url = await this.uploadService.uploadImage(file);
+    const url = await this.uploadService.uploadImage(
+      file,
+      "weddings/godparents",
+    );
     return { url };
   }
 
@@ -285,7 +291,7 @@ export class WeddingsController {
     )
     file: Express.Multer.File,
   ) {
-    const url = await this.uploadService.uploadImage(file);
+    const url = await this.uploadService.uploadImage(file, "weddings/gifts");
     return { url };
   }
 
